@@ -2545,14 +2545,21 @@ subroutine footloose_calving(bergs, time)
     l_c  = pi/(2.*sqrt(2.)) !for length-scale of child iceberg
     lw_c = 1./(gravity*rho_seawater) !for buoyancy length
     B_c  = youngs/(12.*(1.-poisson**2.)) !for bending stiffness
-    seed = constructSeed(mpp_pe(),mpp_pe(),time) !Seed random numbers for Poisson distribution
-    rns = initializeRandomNumberStream(seed)
-    call getRandomNumbers(rns, rn)
+    if (bergs%fl_init_child_xy_by_pe) then !old bug that does not reproduce on different PE layouts
+      seed = constructSeed(mpp_pe(),mpp_pe(),time) !Seed random numbers for Poisson distribution
+      rns = initializeRandomNumberStream(seed)
+      call getRandomNumbers(rns, rn)
+    endif
     Visited=.true.
   endif
 
   do grdj = grd%jsc,grd%jec ; do grdi = grd%isc,grd%iec !computational domain only
     this=>bergs%list(grdi,grdj)%first
+    if ((.not. bergs%fl_init_child_xy_by_pe) .and. associated(this)) then
+      ! Seed random numbers based on space and "time"
+      rns = initializeRandomNumberStream( grdi + 10000*grdj + &
+                                          int( 16384.*abs( sin(262144.*grd%ssh(grdi,grdj)) ) ) )
+    endif
     do while(associated(this))
 
       !only non-static, non-footloose-child bergs are eligible for footloose calving:
