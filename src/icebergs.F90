@@ -117,8 +117,8 @@ subroutine icebergs_init(bergs, &
   logical, intent(in), optional :: fractional_area !< If true, ice_area contains cell area as fraction of entire spherical surface
   ! Local variables
   type(icebergs_gridded), pointer :: grd => null()
-  integer :: nbonds, nbasins
-  logical :: check_bond_quality
+  integer :: nbonds, nbasins, id_class
+  logical :: check_bond_quality, lerr
   integer :: stdlogunit, stderrunit
 
   ! Get the stderr and stdlog unit numbers
@@ -154,6 +154,9 @@ subroutine icebergs_init(bergs, &
   ! Reading the ice-sheet basins of origin for the bergs
   if (bergs%use_berg_origin_basins) then
     call read_ice_sheet_basins(bergs%grd)
+    id_class=register_static_field('icebergs', 'ice_sheet_basins_static', axes, &
+                 'Static ice-sheet basins of origin for icebergs', 'none')
+    if (id_class>0) lerr=send_data(id_class, grd%ice_sheet_basins(grd%isc:grd%iec,grd%jsc:grd%jec))
   else
     bergs%nbasins=1
     grd%ice_sheet_basins(:,:)=0.0
