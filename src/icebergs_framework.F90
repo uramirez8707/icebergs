@@ -62,7 +62,7 @@ logical :: break_bonds_on_sub_steps=.false.
 logical :: skip_first_outer_mts_step=.false.
 logical :: no_frac_first_ts=.false.
 logical :: footloose=.false. !< Turn footloose calving on/off
-logical :: use_berg_origin_basins=.false. !< If true, save ice-sheet basin of origin for each berg and track berg melt associated with each basin
+logical :: use_berg_origin_basins=.false. !< If T, save berg melt associated with the each ice-sheet basin of origin for the bergs
 
 !Public params !Niki: write a subroutine to expose these
 public nclasses,buffer_width,buffer_width_traj,buffer_width_bond_traj
@@ -146,8 +146,8 @@ type :: icebergs_gridded
   real, dimension(:,:), pointer :: cos=>null() !< Cosine from rotation matrix to lat-lon coords
   real, dimension(:,:), pointer :: sin=>null() !< Sine from rotation matrix to lat-lon coords
   real, dimension(:,:), pointer :: ocean_depth=>NULL() !< Depth of ocean (m)
-  real, dimension(:,:), pointer :: ice_sheet_basins=>NULL() !< Basins of origin for bergs (e.g. IMBIE basins, extended to cover calving cells)
-  real, dimension(:,:,:), pointer :: melt_by_ice_sheet_basin=>null() !< Total icebergs melt rate associated with each ice-sheet basin
+  real, dimension(:,:), pointer :: ice_sheet_basins=>NULL() !< Ice-sheet basins of origin for bergs (e.g. IMBIE basins)
+  real, dimension(:,:,:), pointer :: melt_by_ice_sheet_basin=>null() !< Total melt rate for bergs from each ice-sheet basin (kg/s/m^2)
   real, dimension(:,:), pointer :: uo=>null() !< Ocean zonal flow (m/s)
   real, dimension(:,:), pointer :: vo=>null() !< Ocean meridional flow (m/s)
   real, dimension(:,:), pointer :: ui=>null() !< Ice zonal flow (m/s)
@@ -525,7 +525,7 @@ type :: icebergs !; private !Niki: Ask Alistair why this is private. ice_bergs_i
   logical :: tang_crit_int_damp_on=.true. !<crit interaction damping for tangential component?
   logical :: use_old_spreading=.true. !< If true, spreads iceberg mass as if the berg is one grid cell wide
   logical :: read_ocean_depth_from_file=.false. !< If true, ocean depth is read from a file.
-  logical :: use_berg_origin_basins=.false. !< If true, save ice-sheet basin of origin for each berg and track berg melt associated with each basin
+  logical :: use_berg_origin_basins=.false. !< If T, save berg melt associated with the each ice-sheet basin of origin for the bergs
   integer :: nbasins=1 !< Number of ice-sheet basins of origin for the bergs
   integer(kind=8) :: debug_iceberg_with_id = -1 !< If positive, monitors a berg with this id
 
@@ -612,7 +612,8 @@ type :: icebergs !; private !Niki: Ask Alistair why this is private. ice_bergs_i
   real :: ocean_drag_scale=1. !< Scaling factor for the ocean drag coefficients
   ! Footloose calving parameters
   logical :: footloose=.false. !< Turn footloose calving on/off
-  logical :: fl_init_child_xy_by_pe=.false. !< True: position of a new footloose child berg along the parent perimeter is random, yet constant for each PE (old bug). False: fully-random.
+  logical :: fl_init_child_xy_by_pe=.false. !< True: old bug that randomly positions a new footloose child berg along the parent perimeter acoording to PE
+                                            !! (not consistent under different PE layouts). False: Random positioning by element
   real :: fl_youngs=1.e7 !< Young's modulus for footloose calculations (Pa)
   real :: fl_strength=250. !< yield stress for footloose calculations (kPa)
   logical :: displace_fl_bergs=.true. !< footloose berg positions are randomly assigned along edges of parent berg
@@ -824,7 +825,8 @@ real :: constant_width=0. ! If constant_interaction_LW, the constant width used.
 real :: ocean_drag_scale=1. !< Scaling factor for the ocean drag coefficients
 ! Footloose calving parameters
 !logical :: footloose=.false. !< Turn footloose calving on/off
-logical :: fl_init_child_xy_by_pe=.false. !< True: position of a new footloose child berg along the parent perimeter is random, yet constant for each PE (old bug). False: fully-random.
+logical :: fl_init_child_xy_by_pe=.false. !< True: old bug that randomly positions a new footloose child berg along the parent perimeter acoording to PE
+                                          !! (not consistent under different PE layouts). False: Random positioning by element
 real :: fl_youngs=1.e7 !< Young's modulus for footloose calculations (Pa)
 real :: fl_strength=250. !< yield stress for footloose calculations (kPa)
 logical :: displace_fl_bergs=.true. ! footloose berg positions are randomly assigned along edges of parent berg
